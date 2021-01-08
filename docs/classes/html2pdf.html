@@ -2735,6 +2735,12 @@ img {
 				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="html2pdf.html#gethandlebarhelpersforpdftemplate" class="tsd-kind-icon">get<wbr>Handlebar<wbr>Helpers<wbr>ForPDFTemplate</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="html2pdf.html#handlebarscompile" class="tsd-kind-icon">handlebars<wbr>Compile</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="html2pdf.html#handlebarssafestring" class="tsd-kind-icon">handlebars<wbr>Safe<wbr>String</a>
+				</li>
 			</ul>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2778,6 +2784,8 @@ img {
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="html2pdf.html#create" class="tsd-kind-icon">create</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="html2pdf.html#createlink" class="tsd-kind-icon">create<wbr>Link</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="html2pdf.html#gethandlebarhelpersforpdftemplate" class="tsd-kind-icon">get<wbr>Handlebar<wbr>Helpers<wbr>ForPDFTemplate</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="html2pdf.html#handlebarscompile" class="tsd-kind-icon">handlebars<wbr>Compile</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="html2pdf.html#handlebarssafestring" class="tsd-kind-icon">handlebars<wbr>Safe<wbr>String</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2795,7 +2803,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/417e357/src/html2pdf.ts#L21">html2pdf.ts:21</a></li>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L21">html2pdf.ts:21</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <a href="html2pdf.html" class="tsd-signature-type">HTML2PDF</a></h4>
@@ -2815,7 +2823,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/417e357/src/html2pdf.ts#L34">html2pdf.ts:34</a></li>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L47">html2pdf.ts:47</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2853,7 +2861,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/417e357/src/html2pdf.ts#L59">html2pdf.ts:59</a></li>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L72">html2pdf.ts:72</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2897,7 +2905,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/417e357/src/html2pdf.ts#L70">html2pdf.ts:70</a></li>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L83">html2pdf.ts:83</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2926,6 +2934,65 @@ img {
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="handlebarscompile" class="tsd-anchor"></a>
+				<h3>handlebars<wbr>Compile</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">handlebars<wbr>Compile<span class="tsd-signature-symbol">(</span>input<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, options<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">CompileOptions</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">HandlebarsTemplateDelegate</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L31">html2pdf.ts:31</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Compile an Handlebars template.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>input: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> options: <span class="tsd-signature-type">CompileOptions</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">HandlebarsTemplateDelegate</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="handlebarssafestring" class="tsd-anchor"></a>
+				<h3>handlebars<wbr>Safe<wbr>String</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">handlebars<wbr>Safe<wbr>String<span class="tsd-signature-symbol">(</span>str<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SafeString</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/uatisdeproblem/IDEA-html2pdf/blob/5301f50/src/html2pdf.ts#L37">html2pdf.ts:37</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Return a new safe string for Handlebars templates.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>str: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SafeString</span></h4>
 					</li>
 				</ul>
 			</section>
