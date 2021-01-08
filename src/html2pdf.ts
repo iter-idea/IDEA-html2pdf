@@ -1,5 +1,5 @@
 import { Lambda } from 'aws-sdk';
-import Handlebars from 'handlebars';
+import { compile, SafeString } from 'handlebars';
 import { S3 } from 'idea-aws';
 import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
@@ -23,6 +23,19 @@ export class HTML2PDF {
   constructor() {
     this.lambda = new Lambda();
     this.s3 = new S3();
+  }
+
+  /**
+   * Compile an Handlebars template.
+   */
+  public handlebarsCompile(input: any, options?: CompileOptions): HandlebarsTemplateDelegate {
+    return compile(input, options);
+  }
+  /**
+   * Return a new safe string for Handlebars templates.
+   */
+  public handlebarsSafeString(str: string): SafeString {
+    return new SafeString(str);
   }
 
   /**
@@ -91,13 +104,13 @@ export class HTML2PDF {
       },
       inception: (_template: any, _data: any) => {
         const variables = { _template, _data };
-        return new Handlebars.SafeString(Handlebars.compile(htmlInnerTemplate, { compat: true })(variables));
+        return new SafeString(compile(htmlInnerTemplate, { compat: true })(variables));
       },
       isFieldABoolean: (data: any, value: any) => typeof data[value] === 'boolean',
       isFieldANumber: (data: any, value: any) => typeof data[value] === 'number',
       ifEqual: (a: any, b: any, opt: any) => (a === b ? opt.fn(this) : opt.inverse(this)),
       label: (label: Label) => (label ? label[language] || label[languages.default] : null),
-      mdToHTML: (s: string) => (typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s),
+      mdToHTML: (s: string) => (typeof s === 'string' ? new SafeString(mdToHtml(s)) : s),
       translate: (s: string) =>
         s && additionalTranslations && additionalTranslations[s] ? additionalTranslations[s] : s
     };
