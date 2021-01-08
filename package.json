@@ -1,0 +1,52 @@
+{
+  "name": "idea-html2pdf",
+  "version": "1.0.0",
+  "description": "IDEA helper for generating a PDF from HTML contents",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "./build.sh",
+    "publishPackage": "./build.sh && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uatisdeproblem/IDEA-AWS.git"
+  },
+  "keywords": [
+    "idea",
+    "aws",
+    "s3",
+    "lambda"
+  ],
+  "author": "ITER IDEA <info@iter-idea.com> (https://iter-idea.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/uatisdeproblem/IDEA-AWS/issues"
+  },
+  "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
+  "dependencies": {
+    "handlebars": "^4.7.6",
+    "idea-aws": "^3.2.5",
+    "idea-toolbox": "^6.2.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.19",
+    "@types/node": "^11.9.5",
+    "@typescript-eslint/eslint-plugin": "4.3.0",
+    "@typescript-eslint/parser": "4.3.0",
+    "aws-sdk": "^2.411.0",
+    "eslint": "^7.6.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsdoc": "^30.7.9",
+    "eslint-plugin-prefer-arrow": "^1.2.2",
+    "ts-loader": "^8.0.14",
+    "typedoc": "^0.17.8",
+    "typescript": "^3.9.7",
+    "webpack": "^5.11.1",
+    "webpack-cli": "^4.3.1",
+    "webpack-node-externals": "^2.5.2"
+  }
+}
