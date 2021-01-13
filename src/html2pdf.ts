@@ -1,5 +1,5 @@
 import { Lambda } from 'aws-sdk';
-import { compile, SafeString } from 'handlebars';
+import { compile, SafeString, HelperDelegate, registerHelper } from 'handlebars';
 import { S3 } from 'idea-aws';
 import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
@@ -36,6 +36,12 @@ export class HTML2PDF {
    */
   public handlebarsSafeString(str: string): SafeString {
     return new SafeString(str);
+  }
+  /**
+   * Register an additional handelbars helper.
+   */
+  public handlebarsRegisterHelper(name: string, func: HelperDelegate | any) {
+    registerHelper(name, func);
   }
 
   /**
