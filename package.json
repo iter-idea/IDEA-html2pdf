@@ -29,8 +29,8 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.6",
-    "idea-aws": "^3.2.5",
-    "idea-toolbox": "^6.2.1"
+    "idea-aws": "^3.2.6",
+    "idea-toolbox": "^6.2.4"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.19",
