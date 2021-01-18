@@ -1,6 +1,7 @@
 # IDEA HTML -> PDF
 
 IDEA helper for generating a PDF from HTML contents.
+See also AWS Lambda gist: https://gist.github.com/uatisdeproblem/c4204778ed983f99bbbc18758ac1aed0
 
 ## Installation
 
