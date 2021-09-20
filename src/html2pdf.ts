@@ -3,6 +3,10 @@ import { compile, SafeString, HelperDelegate, registerHelper } from 'handlebars'
 import { S3 } from 'idea-aws';
 import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
+// declare libs as global vars to be reused in warm starts by the Lambda function
+let ideaWarmStart_s3: S3 = null;
+let ideaWarmStart_lambda: Lambda = null;
+
 /**
  * A custom class that takes advantage of the `idea_html2pdf` Lambda function to easily manage the creation of PDFs.
  */
@@ -21,26 +25,29 @@ export class HTML2PDF {
   protected LAMBDA_NAME = 'idea_html2pdf:prod';
 
   constructor() {
-    this.lambda = new Lambda();
-    this.s3 = new S3();
+    if (!ideaWarmStart_s3) ideaWarmStart_s3 = new S3();
+    this.s3 = ideaWarmStart_s3;
+
+    if (!ideaWarmStart_lambda) ideaWarmStart_lambda = new Lambda();
+    this.lambda = ideaWarmStart_lambda;
   }
 
   /**
    * Compile an Handlebars template.
    */
-  public handlebarsCompile(input: any, options?: CompileOptions): HandlebarsTemplateDelegate {
+  handlebarsCompile(input: any, options?: CompileOptions): HandlebarsTemplateDelegate {
     return compile(input, options);
   }
   /**
    * Return a new safe string for Handlebars templates.
    */
-  public handlebarsSafeString(str: string): SafeString {
+  handlebarsSafeString(str: string): SafeString {
     return new SafeString(str);
   }
   /**
    * Register an additional handelbars helper.
    */
-  public handlebarsRegisterHelper(name: string, func: HelperDelegate | any) {
+  handlebarsRegisterHelper(name: string, func: HelperDelegate | any) {
     registerHelper(name, func);
   }
 
@@ -50,22 +57,20 @@ export class HTML2PDF {
    * @param alternativeLambda an alternative lambda function to use to generate the PDF
    * @return the PDF data (buffer)
    */
-  public create(params: HTML2PDFParameters, alternativeLambda?: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      this.lambda.invoke(
-        {
+  async create(params: HTML2PDFParameters, alternativeLambda?: string): Promise<Buffer> {
+    try {
+      const result = await this.lambda
+        .invoke({
           FunctionName: alternativeLambda || this.LAMBDA_NAME,
           InvocationType: 'RequestResponse',
           Payload: JSON.stringify(params)
-        },
-        (err: Error, data: any) => {
-          if (err) {
-            logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME);
-            reject(err);
-          } else resolve(Buffer.from(data.Payload, 'base64'));
-        }
-      );
-    });
+        })
+        .promise();
+      return Buffer.from((result as any).Payload, 'base64');
+    } catch (err) {
+      logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME);
+      throw err;
+    }
   }
 
   /**
@@ -75,18 +80,15 @@ export class HTML2PDF {
    * @param downloadOptions the parameters create the download link
    * @return the URL to download the PDF
    */
-  public createLink(params: HTML2PDFParameters, alternativeLambda?: string, downloadOptions?: any): Promise<SignedURL> {
-    return new Promise((resolve, reject) => {
-      this.create(params, alternativeLambda)
-        .then(pdfData => resolve(this.s3.createDownloadURLFromData(pdfData, downloadOptions)))
-        .catch(err => reject(err));
-    });
+  async createLink(params: HTML2PDFParameters, alternativeLambda?: string, downloadOptions?: any): Promise<SignedURL> {
+    const pdfData = await this.create(params, alternativeLambda);
+    return this.s3.createDownloadURLFromData(pdfData, downloadOptions);
   }
 
   /**
    * Helper function to prepare Handlebar's helper for the `PDFTemplateSection` standard.
    */
-  public getHandlebarHelpersForPDFTemplate(
+  getHandlebarHelpersForPDFTemplate(
     language: string,
     languages: Languages,
     htmlInnerTemplate: string,
