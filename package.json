@@ -32,8 +32,8 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.7",
-    "idea-aws": "^3.7.0",
-    "idea-toolbox": "^6.4.1"
+    "idea-aws": "3.6.3",
+    "idea-toolbox": "6.3.2"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",

@@ -72,7 +72,7 @@ export class HTML2PDF {
         .promise();
       return Buffer.from((result as any).Payload, 'base64');
     } catch (err) {
-      logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME);
+      logger('PDF creation failed', err as Error, alternativeLambda || this.LAMBDA_NAME);
       throw err;
     }
   }
@@ -100,7 +100,7 @@ export class HTML2PDF {
 
       return s3Obj.Body;
     } catch (err) {
-      logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET);
+      logger('PDF creation failed', err as Error, alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET);
       throw err;
     }
   }
