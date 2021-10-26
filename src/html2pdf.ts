@@ -23,6 +23,10 @@ export class HTML2PDF {
    * The name of the default Lambda function to invoke.
    */
   protected LAMBDA_NAME = 'idea_html2pdf:prod';
+  /**
+   * The name of the default Lambda function to invoke (alternate version via S3 Bucket).
+   */
+  protected LAMBDA_NAME_VIA_S3_BUCKET = 'idea_html2pdf_viaS3Bucket:prod';
 
   constructor() {
     if (!ideaWarmStart_s3) ideaWarmStart_s3 = new S3();
@@ -69,6 +73,34 @@ export class HTML2PDF {
       return Buffer.from((result as any).Payload, 'base64');
     } catch (err) {
       logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME);
+      throw err;
+    }
+  }
+  /**
+   * Create a new PDF created by an HTML source.
+   * TO USE ONLY when the expected PDF payload is very large (it's slower than the altenative).
+   * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits.
+   * @param params the parameters to create the PDF
+   * @param alternativeLambda an alternative lambda function to use to generate the PDF
+   * @return the PDF data (buffer)
+   */
+  async createViaS3Bucket(params: HTML2PDFParameters, alternativeLambda?: string): Promise<Buffer> {
+    try {
+      const result = await this.lambda
+        .invoke({
+          FunctionName: alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET,
+          InvocationType: 'RequestResponse',
+          Payload: JSON.stringify(params)
+        })
+        .promise();
+
+      const s3params = JSON.parse((result as any).Payload);
+
+      const s3Obj = await this.s3.getObject(s3params);
+
+      return s3Obj.Body;
+    } catch (err) {
+      logger('PDF creation failed', err, alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET);
       throw err;
     }
   }
