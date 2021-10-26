@@ -32,7 +32,6 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.7",
-    "idea-aws": "3.6.3",
     "idea-toolbox": "6.3.2"
   },
   "devDependencies": {

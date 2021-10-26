@@ -1,6 +1,5 @@
-import { Lambda } from 'aws-sdk';
+import { S3, Lambda } from 'aws-sdk';
 import { compile, SafeString, HelperDelegate, registerHelper } from 'handlebars';
-import { S3 } from 'idea-aws';
 import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
 // declare libs as global vars to be reused in warm starts by the Lambda function
@@ -29,7 +28,7 @@ export class HTML2PDF {
   protected LAMBDA_NAME_VIA_S3_BUCKET = 'idea_html2pdf_viaS3Bucket:prod';
 
   constructor() {
-    if (!ideaWarmStart_s3) ideaWarmStart_s3 = new S3();
+    if (!ideaWarmStart_s3) ideaWarmStart_s3 = new S3({ apiVersion: '2006-03-01', signatureVersion: 'v4' });
     this.s3 = ideaWarmStart_s3;
 
     if (!ideaWarmStart_lambda) ideaWarmStart_lambda = new Lambda();
@@ -96,9 +95,9 @@ export class HTML2PDF {
 
       const s3params = JSON.parse((result as any).Payload);
 
-      const s3Obj = await this.s3.getObject(s3params);
+      const s3Obj = await this.s3.getObject(s3params).promise();
 
-      return s3Obj.Body;
+      return s3Obj.Body as Buffer;
     } catch (err) {
       logger('PDF creation failed', err as Error, alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET);
       throw err;
@@ -109,12 +108,18 @@ export class HTML2PDF {
    * Create the signedURL to a new PDF created by an HTML source.
    * @param params the parameters to create the PDF
    * @param alternativeLambda an alternative lambda function to use to generate the PDF
-   * @param downloadOptions the parameters create the download link
    * @return the URL to download the PDF
    */
-  async createLink(params: HTML2PDFParameters, alternativeLambda?: string, downloadOptions?: any): Promise<SignedURL> {
+  async createLink(params: HTML2PDFParameters, alternativeLambda?: string): Promise<SignedURL> {
     const pdfData = await this.create(params, alternativeLambda);
-    return this.s3.createDownloadURLFromData(pdfData, downloadOptions);
+
+    const Key = 'html2pdf'.concat(new Date().getTime().toString().concat(Math.random().toString(36).slice(2)), '.pdf');
+    const Bucket = 'idea-downloads';
+    const Expires = 60;
+
+    await this.s3.upload({ Bucket, Key, Body: pdfData }).promise();
+
+    return new SignedURL({ url: this.s3.getSignedUrl('getObject', { Bucket, Key, Expires }) });
   }
 
   /**
