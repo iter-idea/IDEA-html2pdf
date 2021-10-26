@@ -1,5 +1,5 @@
 import { S3, Lambda } from 'aws-sdk';
-import { compile, SafeString, HelperDelegate, registerHelper } from 'handlebars';
+import * as Handlebars from 'handlebars';
 import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
 // declare libs as global vars to be reused in warm starts by the Lambda function
@@ -39,19 +39,19 @@ export class HTML2PDF {
    * Compile an Handlebars template.
    */
   handlebarsCompile(input: any, options?: CompileOptions): HandlebarsTemplateDelegate {
-    return compile(input, options);
+    return Handlebars.compile(input, options);
   }
   /**
    * Return a new safe string for Handlebars templates.
    */
-  handlebarsSafeString(str: string): SafeString {
-    return new SafeString(str);
+  handlebarsSafeString(str: string): Handlebars.SafeString {
+    return new Handlebars.SafeString(str);
   }
   /**
    * Register an additional handelbars helper.
    */
-  handlebarsRegisterHelper(name: string, func: HelperDelegate | any) {
-    registerHelper(name, func);
+  handlebarsRegisterHelper(name: string, func: Handlebars.HelperDelegate | any) {
+    Handlebars.registerHelper(name, func);
   }
 
   /**
@@ -149,13 +149,13 @@ export class HTML2PDF {
       },
       inception: (_template: any, _data: any) => {
         const variables = { _template, _data };
-        return new SafeString(compile(htmlInnerTemplate, { compat: true })(variables));
+        return new Handlebars.SafeString(Handlebars.compile(htmlInnerTemplate, { compat: true })(variables));
       },
       isFieldABoolean: (data: any, value: any) => typeof data[value] === 'boolean',
       isFieldANumber: (data: any, value: any) => typeof data[value] === 'number',
       ifEqual: (a: any, b: any, opt: any) => (a === b ? opt.fn(this) : opt.inverse(this)),
       label: (label: Label) => (label ? label[language] || label[languages.default] : null),
-      mdToHTML: (s: string) => (typeof s === 'string' ? new SafeString(mdToHtml(s)) : s),
+      mdToHTML: (s: string) => (typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s),
       translate: (s: string) =>
         s && additionalTranslations && additionalTranslations[s] ? additionalTranslations[s] : s
     };
