@@ -1,38 +1,21 @@
 import { S3, Lambda } from 'aws-sdk';
 import * as Handlebars from 'handlebars';
-import { Label, Languages, logger, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
+import { Label, Languages, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
-// declare libs as global vars to be reused in warm starts by the Lambda function
-let ideaWarmStart_s3: S3 = null;
-let ideaWarmStart_lambda: Lambda = null;
+const s3 = new S3({ apiVersion: '2006-03-01', signatureVersion: 'v4' });
+const lambda = new Lambda();
 
 /**
  * A custom class that takes advantage of the `idea_html2pdf` Lambda function to easily manage the creation of PDFs.
  */
 export class HTML2PDF {
-  /**
-   * The instance of Lambda.
-   */
-  protected lambda: Lambda;
-  /**
-   * The instance of S3.
-   */
-  protected s3: S3;
-  /**
-   * The name of the default Lambda function to invoke.
-   */
-  protected LAMBDA_NAME = 'idea_html2pdf:prod';
-  /**
-   * The name of the default Lambda function to invoke (alternate version via S3 Bucket).
-   */
-  protected LAMBDA_NAME_VIA_S3_BUCKET = 'idea_html2pdf_viaS3Bucket:prod';
-
-  constructor() {
-    if (!ideaWarmStart_s3) ideaWarmStart_s3 = new S3({ apiVersion: '2006-03-01', signatureVersion: 'v4' });
-    this.s3 = ideaWarmStart_s3;
-
-    if (!ideaWarmStart_lambda) ideaWarmStart_lambda = new Lambda();
-    this.lambda = ideaWarmStart_lambda;
+  constructor(
+    private options: HTML2PDFInitParameters = {
+      lambdaFnName: 'idea_html2pdf',
+      lambdaFnViaS3BucketName: 'idea_html2pdf_viaS3Bucket'
+    }
+  ) {
+    this.handlebarsRegisterDefaultHelpers();
   }
 
   /**
@@ -50,94 +33,17 @@ export class HTML2PDF {
   /**
    * Register an additional handelbars helper.
    */
-  handlebarsRegisterHelper(name: string, func: Handlebars.HelperDelegate | any) {
+  handlebarsRegisterHelper(name: string, func: Handlebars.HelperDelegate | any): void {
     Handlebars.registerHelper(name, func);
   }
-
   /**
-   * Create a new PDF created by an HTML source.
-   * @param params the parameters to create the PDF
-   * @param alternativeLambda an alternative lambda function to use to generate the PDF
-   * @return the PDF data (buffer)
+   * Register some commonly-used handlebars helpers.
    */
-  async create(params: HTML2PDFParameters, alternativeLambda?: string): Promise<Buffer> {
-    try {
-      const result = await this.lambda
-        .invoke({
-          FunctionName: alternativeLambda || this.LAMBDA_NAME,
-          InvocationType: 'RequestResponse',
-          Payload: JSON.stringify(params)
-        })
-        .promise();
-      return Buffer.from((result as any).Payload, 'base64');
-    } catch (err) {
-      logger('PDF creation failed', err as Error, alternativeLambda || this.LAMBDA_NAME);
-      throw err;
-    }
-  }
-  /**
-   * Create a new PDF created by an HTML source.
-   * TO USE ONLY when the expected PDF payload is very large (it's slower than the altenative).
-   * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits.
-   * @param params the parameters to create the PDF
-   * @param alternativeLambda an alternative lambda function to use to generate the PDF
-   * @return the PDF data (buffer)
-   */
-  async createViaS3Bucket(params: HTML2PDFParameters, alternativeLambda?: string): Promise<Buffer> {
-    try {
-      const result = await this.lambda
-        .invoke({
-          FunctionName: alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET,
-          InvocationType: 'RequestResponse',
-          Payload: JSON.stringify(params)
-        })
-        .promise();
-
-      const s3params = JSON.parse((result as any).Payload);
-
-      const s3Obj = await this.s3.getObject(s3params).promise();
-
-      return s3Obj.Body as Buffer;
-    } catch (err) {
-      logger('PDF creation failed', err as Error, alternativeLambda || this.LAMBDA_NAME_VIA_S3_BUCKET);
-      throw err;
-    }
-  }
-
-  /**
-   * Create the signedURL to a new PDF created by an HTML source.
-   * @param params the parameters to create the PDF
-   * @param alternativeLambda an alternative lambda function to use to generate the PDF
-   * @return the URL to download the PDF
-   */
-  async createLink(params: HTML2PDFParameters, alternativeLambda?: string): Promise<SignedURL> {
-    const pdfData = await this.create(params, alternativeLambda);
-
-    const Key = 'html2pdf'.concat(new Date().getTime().toString().concat(Math.random().toString(36).slice(2)), '.pdf');
-    const Bucket = 'idea-downloads';
-    const Expires = 60;
-
-    await this.s3.upload({ Bucket, Key, Body: pdfData }).promise();
-
-    return new SignedURL({ url: this.s3.getSignedUrl('getObject', { Bucket, Key, Expires }) });
-  }
-
-  /**
-   * Helper function to prepare Handlebar's helper for the `PDFTemplateSection` standard.
-   */
-  getHandlebarHelpersForPDFTemplate(
-    language: string,
-    languages: Languages,
-    htmlInnerTemplate: string,
-    additionalTranslations?: { [term: string]: string }
-  ): any {
-    return {
-      get: (context: any, x: string) => context[x],
-      getOrDash: (context: any, x: string) => (context[x] !== null && context[x] !== undefined ? context[x] : '-'),
-      doesColumnContainAField: (section: PDFTemplateSection, colIndex: number) =>
-        section.doesColumnContainAField(colIndex),
-      getColumnFieldSize: (section: PDFTemplateSection, colIndex: number) => section.getColumnFieldSize(colIndex),
-      substituteVars: (data: any, str: string) => {
+  private handlebarsRegisterDefaultHelpers(): void {
+    const defaultHelpers: any = {
+      get: (context: any, x: string): any => context[x],
+      getOrDash: (context: any, x: string): any => (context[x] !== null && context[x] !== undefined ? context[x] : '-'),
+      substituteVars: (data: any, str: string): string => {
         if (!str || !data) return str || '';
         str = String(str);
         const matches = str.match(/@\w*/gm);
@@ -147,22 +53,137 @@ export class HTML2PDF {
           });
         return str;
       },
-      inception: (_template: any, _data: any) => {
+      isFieldABoolean: (data: any, value: any): boolean => typeof data[value] === 'boolean',
+      isFieldANumber: (data: any, value: any): boolean => typeof data[value] === 'number',
+      ifEqual: (a: any, b: any, opt: any): any => (a === b ? opt.fn(this) : opt.inverse(this)),
+
+      mdToHTML: (s: string): Handlebars.SafeString =>
+        typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s
+    };
+
+    if (this.options.languages) {
+      const lang = this.options.language || this.options.languages.default;
+      defaultHelpers.label = (label: Label): any =>
+        label ? label[lang] || label[this.options.languages.default] : null;
+    }
+
+    if (this.options.additionalTranslations)
+      defaultHelpers.translate = (s: string): string =>
+        s && this.options.additionalTranslations[s] ? this.options.additionalTranslations[s] : s;
+
+    for (const h in defaultHelpers) if (defaultHelpers[h]) this.handlebarsRegisterHelper(h, defaultHelpers[h]);
+  }
+  /**
+   * Register handlebars helpers for the `PDFTemplateSection` IDEA standard.
+   */
+  handlebarsRegisterHelpersForPDFTemplate(htmlInnerTemplate: string): any {
+    const helpers: any = {
+      doesColumnContainAField: (section: PDFTemplateSection, colIndex: number): boolean =>
+        section.doesColumnContainAField(colIndex),
+      getColumnFieldSize: (section: PDFTemplateSection, colIndex: number): number =>
+        section.getColumnFieldSize(colIndex),
+      inception: (_template: any, _data: any): Handlebars.SafeString => {
         const variables = { _template, _data };
         return new Handlebars.SafeString(Handlebars.compile(htmlInnerTemplate, { compat: true })(variables));
-      },
-      isFieldABoolean: (data: any, value: any) => typeof data[value] === 'boolean',
-      isFieldANumber: (data: any, value: any) => typeof data[value] === 'number',
-      ifEqual: (a: any, b: any, opt: any) => (a === b ? opt.fn(this) : opt.inverse(this)),
-      label: (label: Label) => (label ? label[language] || label[languages.default] : null),
-      mdToHTML: (s: string) => (typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s),
-      translate: (s: string) =>
-        s && additionalTranslations && additionalTranslations[s] ? additionalTranslations[s] : s
+      }
     };
+
+    for (const h in helpers) if (helpers[h]) this.handlebarsRegisterHelper(h, helpers[h]);
+  }
+
+  /**
+   * Create a new PDF created by an HTML source.
+   * @param params the parameters to create the PDF
+   * @return the PDF data (buffer)
+   */
+  async create(params: HTML2PDFCreateParameters): Promise<Buffer> {
+    try {
+      const result = await lambda
+        .invoke({
+          FunctionName: this.options.lambdaFnName,
+          InvocationType: 'RequestResponse',
+          Payload: JSON.stringify(params)
+        })
+        .promise();
+      return Buffer.from((result as any).Payload, 'base64');
+    } catch (err) {
+      console.error('PDF creation failed', err, this.options.lambdaFnName);
+      throw err;
+    }
+  }
+  /**
+   * Create a new PDF created by an HTML source.
+   * TO USE ONLY when the expected PDF payload is very large (it's slower than the altenative).
+   * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits.
+   * @param params the parameters to create the PDF
+   * @return the PDF data (buffer)
+   */
+  async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<Buffer> {
+    try {
+      const result = await lambda
+        .invoke({
+          FunctionName: this.options.lambdaFnViaS3BucketName,
+          InvocationType: 'RequestResponse',
+          Payload: JSON.stringify(params)
+        })
+        .promise();
+
+      const s3params = JSON.parse((result as any).Payload);
+      const s3Obj = await s3.getObject(s3params).promise();
+
+      return s3Obj.Body as Buffer;
+    } catch (err) {
+      console.error('PDF creation failed', err, this.options.lambdaFnViaS3BucketName);
+      throw err;
+    }
+  }
+
+  /**
+   * Create the signedURL to a new PDF created by an HTML source.
+   * @param params the parameters to create the PDF
+   * @return the URL to download the PDF
+   */
+  async createLink(params: HTML2PDFCreateViaS3BucketParameters): Promise<SignedURL> {
+    const pdfData = await this.create(params);
+
+    const Key = params.s3Prefix.concat(
+      new Date().getTime().toString().concat(Math.random().toString(36).slice(2)),
+      '.pdf'
+    );
+    const Bucket = params.s3Bucket;
+    const Expires = 120;
+
+    await s3.upload({ Bucket, Key, Body: pdfData }).promise();
+    return new SignedURL({ url: s3.getSignedUrl('getObject', { Bucket, Key, Expires }) });
   }
 }
 
-export interface HTML2PDFParameters {
+export interface HTML2PDFInitParameters {
+  /**
+   * The language configuration to use to enable translations helpers.
+   */
+  languages?: Languages;
+  /**
+   * The preferred language for translations helpers.
+   */
+  language?: string;
+  /**
+   * Additional dictionary to use in translations helpers.
+   */
+  additionalTranslations?: { [term: string]: string };
+  /**
+   * The name of the default Lambda function to invoke.
+   * Default: `idea_html2pdf`.
+   */
+  lambdaFnName?: string;
+  /**
+   * The name of the default Lambda function to invoke (alternate version via S3 Bucket).
+   * Default: `idea_html2pdf_viaS3Bucket`.
+   */
+  lambdaFnViaS3BucketName?: string;
+}
+
+export interface HTML2PDFCreateParameters {
   /**
    * The html main body.
    */
@@ -180,8 +201,18 @@ export interface HTML2PDFParameters {
    */
   pdfOptions: any;
 }
+export interface HTML2PDFCreateViaS3BucketParameters extends HTML2PDFCreateParameters {
+  /**
+   * The S3 bucket where to put the generated PDF file.
+   */
+  s3Bucket: string;
+  /**
+   * The prefix for the generated PDF file in the S3 bucket.
+   */
+  s3Prefix: string;
+}
 
-export const PDF_TEMPLATE = `
+export const PDF_DEFAULT_TEMPLATE = `
   <!DOCTYPE html>
   <html>
 
