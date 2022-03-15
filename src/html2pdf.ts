@@ -147,6 +147,7 @@ export class HTML2PDF {
     const pdfData = await this.create(params);
 
     const Key = params.s3Prefix.concat(
+      '/',
       new Date().getTime().toString().concat(Math.random().toString(36).slice(2)),
       '.pdf'
     );
