@@ -32,7 +32,7 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.7",
-    "idea-toolbox": "^6.5.11"
+    "idea-toolbox": "^6.5.15"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",
