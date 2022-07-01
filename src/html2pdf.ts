@@ -9,12 +9,9 @@ const lambda = new Lambda();
  * A custom class that takes advantage of the `idea_html2pdf` Lambda function to easily manage the creation of PDFs.
  */
 export class HTML2PDF {
-  constructor(
-    private options: HTML2PDFInitParameters = {
-      lambdaFnName: 'idea_html2pdf',
-      lambdaFnViaS3BucketName: 'idea_html2pdf_viaS3Bucket'
-    }
-  ) {
+  constructor(private options: HTML2PDFInitParameters = {}) {
+    if (!options.lambdaFnName) options.lambdaFnName = 'idea_html2pdf';
+    if (!options.lambdaFnViaS3BucketName) options.lambdaFnViaS3BucketName = 'idea_html2pdf_viaS3Bucket';
     this.handlebarsRegisterDefaultHelpers();
   }
 
@@ -40,6 +37,8 @@ export class HTML2PDF {
    * Register some commonly-used handlebars helpers.
    */
   private handlebarsRegisterDefaultHelpers(): void {
+    const lang = this.options.language ?? this.options.languages.default;
+
     const defaultHelpers: any = {
       get: (context: any, x: string): any => context[x],
       getOrDash: (context: any, x: string): any => (context[x] !== null && context[x] !== undefined ? context[x] : '-'),
@@ -58,19 +57,16 @@ export class HTML2PDF {
       ifEqual: (a: any, b: any, opt: any): any => (a === b ? opt.fn(this) : opt.inverse(this)),
 
       mdToHTML: (s: string): Handlebars.SafeString =>
-        typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s
+        typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s,
+
+      label: (label: Label): any =>
+        this.options.languages && label ? label[lang] ?? label[this.options.languages.default] : null,
+
+      translate: (s: string): string =>
+        this.options.additionalTranslations && s && this.options.additionalTranslations[s]
+          ? this.options.additionalTranslations[s]
+          : s
     };
-
-    if (this.options.languages) {
-      const lang = this.options.language || this.options.languages.default;
-      defaultHelpers.label = (label: Label): any =>
-        label ? label[lang] || label[this.options.languages.default] : null;
-    }
-
-    if (this.options.additionalTranslations)
-      defaultHelpers.translate = (s: string): string =>
-        s && this.options.additionalTranslations[s] ? this.options.additionalTranslations[s] : s;
-
     for (const h in defaultHelpers) if (defaultHelpers[h]) this.handlebarsRegisterHelper(h, defaultHelpers[h]);
   }
   /**
