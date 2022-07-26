@@ -37,8 +37,6 @@ export class HTML2PDF {
    * Register some commonly-used handlebars helpers.
    */
   private handlebarsRegisterDefaultHelpers(): void {
-    const lang = this.options.language ?? this.options.languages.default;
-
     const defaultHelpers: any = {
       get: (context: any, x: string): any => context[x],
       getOrDash: (context: any, x: string): any => (context[x] !== null && context[x] !== undefined ? context[x] : '-'),
@@ -60,7 +58,9 @@ export class HTML2PDF {
         typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s,
 
       label: (label: Label): any =>
-        this.options.languages && label ? label[lang] ?? label[this.options.languages.default] : null,
+        this.options.language && this.options.languages && label
+          ? label[this.options.language] ?? label[this.options.languages.default]
+          : null,
 
       translate: (s: string): string =>
         this.options.additionalTranslations && s && this.options.additionalTranslations[s]
