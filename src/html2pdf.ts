@@ -40,6 +40,8 @@ export class HTML2PDF {
     const defaultHelpers: any = {
       get: (context: any, x: string): any => context[x],
       getOrDash: (context: any, x: string): any => (context[x] !== null && context[x] !== undefined ? context[x] : '-'),
+      getOrNewLine: (context: any, x: string): any =>
+        context[x] !== null && context[x] !== undefined ? context[x].toString().trim() : '<br>',
       substituteVars: (data: any, str: string): string => {
         if (!str || !data) return str || '';
         str = String(str);
@@ -349,7 +351,7 @@ export const PDF_DEFAULT_TEMPLATE = `
                               />
                             {{/if}}
                           {{else}}
-                            {{mdToHTML (translate (getOrDash _data field.code))}}
+                            {{mdToHTML (translate (getOrNewLine _data field.code))}}
                           {{/if}}
                         </td>
                       {{! complext field }}
