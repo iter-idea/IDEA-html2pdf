@@ -1,6 +1,6 @@
 {
   "name": "idea-html2pdf",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "IDEA helper for generating a PDF from HTML contents",
   "engines": {
     "node": ">=6.0.0"
