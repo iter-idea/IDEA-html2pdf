@@ -1,9 +1,12 @@
-import { S3, Lambda } from 'aws-sdk';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import * as Handlebars from 'handlebars';
 import { Label, Languages, mdToHtml, PDFTemplateSection, SignedURL } from 'idea-toolbox';
 
-const s3 = new S3({ apiVersion: '2006-03-01', signatureVersion: 'v4' });
-const lambda = new Lambda();
+const s3 = new S3Client();
+const lambda = new LambdaClient();
 
 /**
  * A custom class that takes advantage of the `idea_html2pdf` Lambda function to easily manage the creation of PDFs.
@@ -97,14 +100,13 @@ export class HTML2PDF {
    */
   async create(params: HTML2PDFCreateParameters): Promise<Buffer> {
     try {
-      const result = await lambda
-        .invoke({
-          FunctionName: this.options.lambdaFnName,
-          InvocationType: 'RequestResponse',
-          Payload: JSON.stringify(params)
-        })
-        .promise();
-      return Buffer.from((result as any).Payload, 'base64');
+      const command = new InvokeCommand({
+        FunctionName: this.options.lambdaFnName,
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify(params)
+      });
+      const { Payload } = await lambda.send(command);
+      return Buffer.from(Payload.transformToString(), 'base64');
     } catch (err) {
       console.error('PDF creation failed', err, this.options.lambdaFnName);
       throw err;
@@ -117,20 +119,19 @@ export class HTML2PDF {
    * @param params the parameters to create the PDF
    * @return the PDF data (buffer)
    */
-  async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<Buffer> {
+  async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<any> {
     try {
-      const result = await lambda
-        .invoke({
-          FunctionName: this.options.lambdaFnViaS3BucketName,
-          InvocationType: 'RequestResponse',
-          Payload: JSON.stringify(params)
-        })
-        .promise();
+      const invokeCommand = new InvokeCommand({
+        FunctionName: this.options.lambdaFnViaS3BucketName,
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify(params)
+      });
+      const { Payload } = await lambda.send(invokeCommand);
 
-      const s3params = JSON.parse((result as any).Payload);
-      const s3Obj = await s3.getObject(s3params).promise();
-
-      return s3Obj.Body as Buffer;
+      const s3params = JSON.parse(Payload.transformToString());
+      const getObjCommand = new GetObjectCommand(s3params);
+      const { Body } = await s3.send(getObjCommand);
+      return Buffer.from(await Body.transformToString(), 'base64');
     } catch (err) {
       console.error('PDF creation failed', err, this.options.lambdaFnViaS3BucketName);
       throw err;
@@ -145,16 +146,19 @@ export class HTML2PDF {
   async createLink(params: HTML2PDFCreateViaS3BucketParameters): Promise<SignedURL> {
     const pdfData = await this.create(params);
 
+    const Bucket = params.s3Bucket;
     const Key = params.s3Prefix.concat(
       '/',
       new Date().getTime().toString().concat(Math.random().toString(36).slice(2)),
       '.pdf'
     );
-    const Bucket = params.s3Bucket;
-    const Expires = 120;
 
-    await s3.upload({ Bucket, Key, Body: pdfData }).promise();
-    return new SignedURL({ url: s3.getSignedUrl('getObject', { Bucket, Key, Expires }) });
+    const upload = new Upload({ client: s3, params: { Bucket, Key, Body: pdfData } });
+    await upload.done();
+
+    const getCommand = new GetObjectCommand({ Bucket, Key });
+    const url = await getSignedUrl(s3, getCommand, { expiresIn: 120 });
+    return new SignedURL({ url });
   }
 }
 
