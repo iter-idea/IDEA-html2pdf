@@ -106,7 +106,7 @@ export class HTML2PDF {
         Payload: JSON.stringify(params)
       });
       const { Payload } = await lambda.send(command);
-      return Buffer.from(Payload.transformToString(), 'base64');
+      return Buffer.from(Buffer.from(Payload).toString(), 'base64');
     } catch (err) {
       console.error('PDF creation failed', err, this.options.lambdaFnName);
       throw err;
@@ -117,9 +117,9 @@ export class HTML2PDF {
    * TO USE ONLY when the expected PDF payload is very large (it's slower than the altenative).
    * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits.
    * @param params the parameters to create the PDF
-   * @return the PDF data (buffer)
+   * @return the PDF data (Buffer)
    */
-  async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<any> {
+  async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<Buffer> {
     try {
       const invokeCommand = new InvokeCommand({
         FunctionName: this.options.lambdaFnViaS3BucketName,
@@ -128,7 +128,8 @@ export class HTML2PDF {
       });
       const { Payload } = await lambda.send(invokeCommand);
 
-      const s3params = JSON.parse(Payload.transformToString());
+      const s3params = JSON.parse(Buffer.from(Payload).toString());
+
       const getObjCommand = new GetObjectCommand(s3params);
       const { Body } = await s3.send(getObjCommand);
       return Buffer.from(await Body.transformToString(), 'base64');
@@ -149,7 +150,10 @@ export class HTML2PDF {
     const Bucket = params.s3Bucket;
     const Key = params.s3Prefix.concat('/', Date.now().toString().concat(Math.random().toString(36).slice(2)), '.pdf');
 
-    const upload = new Upload({ client: s3, params: { Bucket, Key, Body: pdfData } });
+    const upload = new Upload({
+      client: s3,
+      params: { Bucket, Key, Body: pdfData, ContentType: 'application/pdf' }
+    });
     await upload.done();
 
     const getCommand = new GetObjectCommand({ Bucket, Key });
