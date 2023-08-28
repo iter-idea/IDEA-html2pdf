@@ -13,8 +13,8 @@ const lambda = new LambdaClient();
  */
 export class HTML2PDF {
   constructor(private options: HTML2PDFInitParameters = {}) {
-    if (!options.lambdaFnName) options.lambdaFnName = 'idea_html2pdf';
-    if (!options.lambdaFnViaS3BucketName) options.lambdaFnViaS3BucketName = 'idea_html2pdf_viaS3Bucket';
+    if (!options.lambdaFnName) options.lambdaFnName = 'idea_html2pdf:prod';
+    if (!options.lambdaFnViaS3BucketName) options.lambdaFnViaS3BucketName = 'idea_html2pdf_viaS3Bucket:prod';
     this.handlebarsRegisterDefaultHelpers();
   }
 
@@ -177,12 +177,12 @@ export interface HTML2PDFInitParameters {
   additionalTranslations?: { [term: string]: string };
   /**
    * The name of the default Lambda function to invoke.
-   * Default: `idea_html2pdf`.
+   * Default: `idea_html2pdf:prod`.
    */
   lambdaFnName?: string;
   /**
    * The name of the default Lambda function to invoke (alternate version via S3 Bucket).
-   * Default: `idea_html2pdf_viaS3Bucket`.
+   * Default: `idea_html2pdf_viaS3Bucket:prod`.
    */
   lambdaFnViaS3BucketName?: string;
 }
