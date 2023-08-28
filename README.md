@@ -19,4 +19,4 @@ Documentation generated with TypeDoc: [link](https://uatisdeproblem.github.io/ID
 
 ## Notes
 
-The AWS-SDK is already pre-installed in every Lambda Function; therefore, it's a devDependency.
+The AWS SDK's (v3) packages are already pre-installed in every Lambda Function; therefore, they are `peerDependencies`.
