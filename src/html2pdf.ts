@@ -132,7 +132,7 @@ export class HTML2PDF {
 
       const getObjCommand = new GetObjectCommand(s3params);
       const { Body } = await s3.send(getObjCommand);
-      return Buffer.from(await Body.transformToString('base64'));
+      return Buffer.from(await Body.transformToString('base64'), 'base64');
     } catch (err) {
       console.error('PDF creation failed', err, this.options.lambdaFnViaS3BucketName);
       throw err;
