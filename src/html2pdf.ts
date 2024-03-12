@@ -358,7 +358,7 @@ export const PDF_DEFAULT_TEMPLATE = `
                             {{mdToHTML (translate (getOrNewLine _data field.code))}}
                           {{/if}}
                         </td>
-                      {{! complext field }}
+                      {{! complex field }}
                       {{else}}
                         <td colspan="{{getColumnFieldSize section @index}}">
                           {{#ifEqual 12 (getColumnFieldSize section @index)}}
