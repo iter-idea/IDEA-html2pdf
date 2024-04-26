@@ -2,6 +2,7 @@
   "name": "idea-html2pdf",
   "version": "2.2.5",
   "description": "IDEA helper for generating a PDF from HTML contents",
+  "license": "MPL-2.0",
   "engines": {
     "node": ">=6.0.0"
   },
@@ -25,7 +26,6 @@
     "lambda"
   ],
   "author": "ITER IDEA <info@iter-idea.com> (https://iter-idea.com)",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/uatisdeproblem/IDEA-AWS/issues"
   },
