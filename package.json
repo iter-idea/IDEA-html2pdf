@@ -1,6 +1,6 @@
 {
   "name": "idea-html2pdf",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "description": "IDEA helper for generating a PDF from HTML contents",
   "license": "MPL-2.0",
   "engines": {
