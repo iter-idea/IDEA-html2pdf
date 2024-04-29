@@ -3,7 +3,7 @@
 .vscode/
 docs/
 node_modules/
-src/
+/src/
 .gitignore
 .prettierrc
 HOW-TO-RELEASE.md
