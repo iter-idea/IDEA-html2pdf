@@ -32,21 +32,21 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.8",
-    "idea-toolbox": "^7.0.1"
+    "idea-toolbox": "^7.0.8"
   },
   "peerDependencies": {
-    "@aws-sdk/client-lambda": "^3.388.0",
-    "@aws-sdk/client-s3": "^3.388.0",
-    "@aws-sdk/lib-storage": "^3.388.0",
-    "@aws-sdk/s3-request-presigner": "^3.388.0"
+    "@aws-sdk/client-lambda": "^3.616.0",
+    "@aws-sdk/client-s3": "^3.614.0",
+    "@aws-sdk/lib-storage": "^3.616.0",
+    "@aws-sdk/s3-request-presigner": "^3.616.0"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.0",
-    "@types/node": "^18.17.4",
-    "@typescript-eslint/eslint-plugin": "^5.47.0",
-    "@typescript-eslint/parser": "^5.47.0",
-    "eslint": "^8.46.0",
-    "typedoc": "^0.24.8",
-    "typescript": "^5.1.6"
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.14.11",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
+    "eslint": "^8.57.0",
+    "typedoc": "^0.26.5",
+    "typescript": "^5.5.2"
   }
 }
