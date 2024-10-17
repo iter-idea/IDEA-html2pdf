@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
@@ -59,15 +59,12 @@ export class HTML2PDF {
       isFieldABoolean: (data: any, value: any): boolean => typeof data[value] === 'boolean',
       isFieldANumber: (data: any, value: any): boolean => typeof data[value] === 'number',
       ifEqual: (a: any, b: any, opt: any): any => (a === b ? opt.fn(this) : opt.inverse(this)),
-
       mdToHTML: (s: string): Handlebars.SafeString =>
         typeof s === 'string' ? new Handlebars.SafeString(mdToHtml(s)) : s,
-
       label: (label: Label): any =>
         this.options.language && this.options.languages && label
           ? label[this.options.language] ?? label[this.options.languages.default]
           : null,
-
       translate: (s: string): string =>
         this.options.additionalTranslations && s && this.options.additionalTranslations[s]
           ? this.options.additionalTranslations[s]
@@ -89,7 +86,6 @@ export class HTML2PDF {
         return new Handlebars.SafeString(Handlebars.compile(htmlInnerTemplate, { compat: true })(variables));
       }
     };
-
     for (const h in helpers) if (helpers[h]) this.handlebarsRegisterHelper(h, helpers[h]);
   }
 
@@ -101,8 +97,8 @@ export class HTML2PDF {
   async create(params: HTML2PDFCreateParameters): Promise<Buffer> {
     try {
       const command = new InvokeCommand({
-        FunctionName: this.options.lambdaFnName,
         InvocationType: 'RequestResponse',
+        FunctionName: this.options.lambdaFnName,
         Payload: JSON.stringify(params)
       });
       const { Payload } = await lambda.send(command);
@@ -123,14 +119,12 @@ export class HTML2PDF {
     try {
       const paramsFromURL = await this.getS3ParamsFileURL(params);
       const invokeCommand = new InvokeCommand({
-        FunctionName: this.options.lambdaFnViaS3BucketName,
         InvocationType: 'RequestResponse',
+        FunctionName: this.options.lambdaFnViaS3BucketName,
         Payload: JSON.stringify({ paramsFromURL })
       });
       const { Payload } = await lambda.send(invokeCommand);
-
       const s3params = JSON.parse(Buffer.from(Payload).toString());
-
       const getObjCommand = new GetObjectCommand(s3params);
       const { Body } = await s3.send(getObjCommand);
       return Buffer.from(await Body.transformToString('base64'), 'base64');
@@ -147,8 +141,8 @@ export class HTML2PDF {
     const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.json`;
     const ContentType = 'application/json';
     const Body = JSON.stringify(params);
-    const putCommand = new PutObjectCommand({ Bucket, Key, ContentType, Body, IfNoneMatch: '*' });
-    await s3.send(putCommand);
+    const upload = new Upload({ client: s3, params: { Bucket, Key, Body, ContentType, IfNoneMatch: '*' } });
+    await upload.done();
     const getCommand = new GetObjectCommand({ Bucket, Key });
     return await getSignedUrl(s3, getCommand, { expiresIn: 120 });
   }
@@ -158,18 +152,13 @@ export class HTML2PDF {
    * @param params the parameters to create the PDF
    * @return the URL to download the PDF
    */
-  async createLink(params: HTML2PDFCreateViaS3BucketParameters): Promise<SignedURL> {
-    const pdfData = await this.create(params);
-
+  async createLink(params: HTML2PDFCreateViaS3BucketParameters, viaS3Bucket = false): Promise<SignedURL> {
     const Bucket = params.s3Bucket;
     const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.pdf`;
-
-    const upload = new Upload({
-      client: s3,
-      params: { Bucket, Key, Body: pdfData, ContentType: 'application/pdf' }
-    });
+    const ContentType = 'application/pdf';
+    const Body = await (viaS3Bucket ? this.createViaS3Bucket(params) : this.create(params));
+    const upload = new Upload({ client: s3, params: { Bucket, Key, Body, ContentType, IfNoneMatch: '*' } });
     await upload.done();
-
     const getCommand = new GetObjectCommand({ Bucket, Key });
     const url = await getSignedUrl(s3, getCommand, { expiresIn: 120 });
     return new SignedURL({ url });
