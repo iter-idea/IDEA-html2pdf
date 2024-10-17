@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
@@ -115,16 +115,17 @@ export class HTML2PDF {
   /**
    * Create a new PDF created by an HTML source.
    * TO USE ONLY when the expected PDF payload is very large (it's slower than the altenative).
-   * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits.
+   * It takes advantage of an intermediate S3 bucket to avoid Lambda's payload limits (in & out).
    * @param params the parameters to create the PDF
    * @return the PDF data (Buffer)
    */
   async createViaS3Bucket(params: HTML2PDFCreateViaS3BucketParameters): Promise<Buffer> {
     try {
+      const paramsFromURL = await this.getS3ParamsFileURL(params);
       const invokeCommand = new InvokeCommand({
         FunctionName: this.options.lambdaFnViaS3BucketName,
         InvocationType: 'RequestResponse',
-        Payload: JSON.stringify(params)
+        Payload: JSON.stringify({ paramsFromURL })
       });
       const { Payload } = await lambda.send(invokeCommand);
 
@@ -138,6 +139,19 @@ export class HTML2PDF {
       throw err;
     }
   }
+  /**
+   * Prepare a helper S3 file which contains the parameters to send to the Lambda Function, to avoid payload limits.
+   */
+  private async getS3ParamsFileURL(params: HTML2PDFCreateViaS3BucketParameters): Promise<string> {
+    const Bucket = params.s3Bucket;
+    const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.json`;
+    const ContentType = 'application/json';
+    const Body = JSON.stringify(params);
+    const putCommand = new PutObjectCommand({ Bucket, Key, ContentType, Body, IfNoneMatch: '*' });
+    await s3.send(putCommand);
+    const getCommand = new GetObjectCommand({ Bucket, Key });
+    return await getSignedUrl(s3, getCommand, { expiresIn: 120 });
+  }
 
   /**
    * Create the signedURL to a new PDF created by an HTML source.
@@ -148,7 +162,7 @@ export class HTML2PDF {
     const pdfData = await this.create(params);
 
     const Bucket = params.s3Bucket;
-    const Key = params.s3Prefix.concat('/', Date.now().toString().concat(Math.random().toString(36).slice(2)), '.pdf');
+    const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.pdf`;
 
     const upload = new Upload({
       client: s3,
