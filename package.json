@@ -41,7 +41,7 @@
     "@aws-sdk/s3-request-presigner": "^3.850.0"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.6",
+    "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.16.5",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
