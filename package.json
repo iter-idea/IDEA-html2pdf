@@ -4,7 +4,7 @@
   "description": "IDEA helper for generating a PDF from HTML contents",
   "license": "MPL-2.0",
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=24.0.0"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,21 +32,20 @@
   "homepage": "https://uatisdeproblem.github.io/IDEA-AWS",
   "dependencies": {
     "handlebars": "^4.7.8",
-    "idea-toolbox": "^7.1.10"
+    "idea-toolbox": "^7.3.0"
   },
   "peerDependencies": {
     "@aws-sdk/client-lambda": "^3.851.0",
     "@aws-sdk/client-s3": "^3.850.0",
-    "@aws-sdk/lib-storage": "^3.850.0",
     "@aws-sdk/s3-request-presigner": "^3.850.0"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.2",
-    "@types/node": "^22.16.5",
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
-    "@typescript-eslint/parser": "^8.38.0",
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^24.13.2",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
     "eslint": "^9.32.0",
-    "typedoc": "^0.28.8",
-    "typescript": "^5.8.3"
+    "typedoc": "^0.28.19",
+    "typescript": "^5.9.3"
   }
 }

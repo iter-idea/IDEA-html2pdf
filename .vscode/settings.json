@@ -22,5 +22,6 @@
   "workbench.iconTheme": "vs-seti",
   "window.zoomLevel": 0,
   "extensions.ignoreRecommendations": false,
-  "editor.guides.indentation": true
+  "editor.guides.indentation": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

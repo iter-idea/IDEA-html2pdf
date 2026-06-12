@@ -1,5 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import * as Handlebars from 'handlebars';
@@ -141,8 +140,7 @@ export class HTML2PDF {
     const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.json`;
     const ContentType = 'application/json';
     const Body = JSON.stringify(params);
-    const upload = new Upload({ client: s3, params: { Bucket, Key, Body, ContentType, IfNoneMatch: '*' } });
-    await upload.done();
+    await s3.send(new PutObjectCommand({ Bucket, Key, Body, ContentType, IfNoneMatch: '*' }));
     const getCommand = new GetObjectCommand({ Bucket, Key });
     return await getSignedUrl(s3, getCommand, { expiresIn: 120 });
   }
@@ -157,8 +155,7 @@ export class HTML2PDF {
     const Key = `${params.s3Prefix}/${Date.now()}${Math.random().toString(36).slice(2)}.pdf`;
     const ContentType = 'application/pdf';
     const Body = await (viaS3Bucket ? this.createViaS3Bucket(params) : this.create(params));
-    const upload = new Upload({ client: s3, params: { Bucket, Key, Body, ContentType, IfNoneMatch: '*' } });
-    await upload.done();
+    await s3.send(new PutObjectCommand({ Bucket, Key, Body, ContentType, IfNoneMatch: '*' }));
     const getCommand = new GetObjectCommand({ Bucket, Key });
     const url = await getSignedUrl(s3, getCommand, { expiresIn: 120 });
     return new SignedURL({ url });
